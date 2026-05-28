@@ -1,6 +1,8 @@
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js"
 import bcrypt from "bcryptjs"
+import { sendWelcomeEmail }  from "../emails/emailHandlers.js"
+import { ENV } from "../lib/env.js";
 
 export const signup = async (req, res) => {
 	const { fullname, email, password } = req.body;
@@ -9,6 +11,7 @@ export const signup = async (req, res) => {
 		if (!fullname || !email || !password) {
 			return res.status(400).json({ message: "All fields are required" });
 		}
+
 		if (password.length < 6) {
 			return res.status(400).json({ message: "Password must be at least 6 characters long" });
 		}
@@ -44,6 +47,12 @@ export const signup = async (req, res) => {
 				email:newUser.email,
 				profilePic: newUser.profilePic,
 			 });
+
+			try {
+				await sendWelcomeEmail(savedUser.email, savedUser.fullname, ENV.CLIENT_URL);
+			}catch (error) {
+				console.error("Error sending welcome email:", error);
+			}
 		} else {
 			res.status(400).json({ message: "Failed to create user" });
 		}
